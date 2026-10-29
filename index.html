@@ -1,0 +1,745 @@
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What did you see? Art review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #eef0f3;
+    --card: #ffffff;
+    --ink: #1a1f2b;
+    --muted: #5b6372;
+    --line: #d5d9e0;
+    --accent: #2a47d8;
+    --accent-soft: #e3e8fc;
+    --liked: #1d7a57;
+    --liked-soft: #dcf1e8;
+    --disliked: #b3315c;
+    --disliked-soft: #f8e0e8;
+    --neutral-soft: #e6e8ec;
+    --radius: 10px;
+    --head: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+    --body: "Figtree", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #12151c;
+      --card: #1b2029;
+      --ink: #eceff5;
+      --muted: #9aa3b4;
+      --line: #313846;
+      --accent: #7b92ff;
+      --accent-soft: #232b4d;
+      --liked: #5fd1a1;
+      --liked-soft: #17352a;
+      --disliked: #f07ba0;
+      --disliked-soft: #3b1c28;
+      --neutral-soft: #2a303c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 400 16px/1.55 var(--body);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 18px 64px; }
+  h1 { font: 700 clamp(2rem, 6vw, 3rem)/1.05 var(--head); letter-spacing: -0.02em; margin: 0 0 8px; }
+  .lede { color: var(--muted); margin: 0 0 28px; max-width: 52ch; }
+
+  .banner {
+    background: var(--disliked-soft); color: var(--disliked);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 18px; font-weight: 500;
+  }
+  .banner[hidden] { display: none; }
+
+  .steps { display: flex; gap: 6px; margin-bottom: 18px; padding: 0; list-style: none; }
+  .steps li {
+    flex: 1; font-size: .85rem; color: var(--muted);
+    border-top: 3px solid var(--line); padding-top: 6px;
+  }
+  .steps li.done { border-color: var(--accent); color: var(--ink); }
+  .steps li.current { border-color: var(--accent); color: var(--ink); font-weight: 600; }
+
+  form { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .panel[hidden] { display: none; }
+  h2 { font: 700 1.5rem/1.2 var(--head); margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: .92rem; margin: 0 0 18px; }
+  .field { margin-bottom: 20px; }
+  label.q, legend.q { display: block; font-weight: 600; margin-bottom: 6px; padding: 0; }
+  .opt { font-weight: 400; color: var(--muted); }
+
+  input[type=text], input[type=url], select, textarea {
+    width: 100%; font: inherit; color: var(--ink); background: var(--paper);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 11px 12px;
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible,
+  .seg input:focus-visible + span, .chip input:focus-visible + span, .scale input:focus-visible + span,
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .artist-shown { padding: 11px 12px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); }
+  .view { display: grid; place-items: center; min-height: 220px; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .view img { display: block; width: 100%; max-height: 70vh; object-fit: contain; }
+  .view-msg { color: var(--muted); padding: 24px; text-align: center; margin: 0; }
+  .bar { height: 6px; background: var(--neutral-soft); border-radius: 99px; margin-top: 14px; overflow: hidden; }
+  .bar div { height: 100%; width: 0; background: var(--accent); }
+  .view-count { text-align: center; color: var(--muted); margin: 10px 0 0; min-height: 1.5em; }
+  .viewskip { text-align: center; margin-top: 12px; }
+  .count { text-align: right; color: var(--muted); font-size: .8rem; }
+
+  /* aspect rows */
+  .aspect { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .aspect:last-child { border-bottom: 0; }
+  .aspect .name { font-weight: 500; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg label { cursor: pointer; }
+  .seg input, .chip input, .scale input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg span { display: block; padding: 7px 14px; font-size: .9rem; color: var(--muted); }
+  .seg label + label span { border-left: 1px solid var(--line); }
+  .seg input:checked + span.d { background: var(--disliked-soft); color: var(--disliked); font-weight: 600; }
+  .seg input:checked + span.n { background: var(--neutral-soft); color: var(--ink); font-weight: 600; }
+  .seg input:checked + span.l { background: var(--liked-soft); color: var(--liked); font-weight: 600; }
+  .aspect.invalid .name { color: var(--disliked); }
+  @media (max-width: 520px) { .aspect { grid-template-columns: 1fr; } }
+
+  /* chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { cursor: pointer; }
+  .chip span { display: block; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; font-size: .92rem; }
+  .chip input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  /* 1-5 scale */
+  .scale { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .scale label { cursor: pointer; }
+  .scale span { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
+    border: 1px solid var(--line); font-weight: 600; }
+  .scale input:checked + span { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .scale small { color: var(--muted); }
+
+  .err { color: var(--disliked); font-size: .88rem; margin-top: 6px; min-height: 0; }
+  .nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 24px; }
+  button { font: 600 1rem var(--body); border-radius: 999px; padding: 12px 24px; cursor: pointer; border: 1px solid var(--line);
+    background: transparent; color: var(--ink); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .6; cursor: wait; }
+  .done-card { text-align: center; padding: 28px 8px; }
+  .done-card[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>What did you see?</h1>
+  <p class="lede">Tell us about an artwork you came across: where it was, what worked, what didn’t.</p>
+
+  <div class="banner" id="banner" hidden>
+    This page isn’t connected to a Google Form yet. Answers are not being saved. Fill in <code>CONFIG</code> in the script.
+  </div>
+
+  <ol class="steps" id="steps" aria-label="Progress"></ol>
+
+  <form id="form" novalidate>
+    <div id="panels"></div>
+    <div class="nav">
+      <button type="button" id="back">Back</button>
+      <button type="button" class="primary" id="next">Next</button>
+    </div>
+  </form>
+
+  <div class="done-card" id="thanks" hidden>
+    <h2>Thank you</h2>
+    <p class="lede" style="margin:8px auto 20px">Your review was sent.</p>
+    <button type="button" class="primary" id="again">Review another artwork</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG: the only part you edit.
+   1. formUrl: your form's "formResponse" address (see instructions).
+   2. entries: the entry.XXXXXXXX id of each question in YOUR form.
+   3. Question text/labels here must match the form EXACTLY
+      (dropdown options, grid columns, checkbox options).
+   ============================================================ */
+const CONFIG = {
+  formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfozQHjWqUqfR60epTbO5oI3pg2Dynx2_V0F-aoClrJqEqdAg/formResponse",
+
+  // Live artwork list. Paste the CSV link from your sheet: File > Share > Publish to web > pick the tab > CSV.
+  // The sheet needs columns containing "Full Name" and "Sustainability Title"; an optional column named "#" or "Number" sets the numbers.
+  // Without a link, or if loading fails, the saved list below is used.
+  // How long (seconds) the artwork is shown before the page moves on by itself.
+  viewSeconds: 8,
+
+  artworksCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSIkxqM2aGoDfJ5zmF0xKfC1nB7z_RaFCMYPvIJP2lEUaHoeXvoBxp4ZFPTTGLfwb_LwsK_ovFOs99n/pub?gid=1528539135&single=true&output=csv",
+
+  entries: {
+    artwork:  "entry.870202566",    // short answer: "number - title"
+    artist:   "entry.1627336134",
+    country:  "entry.1437230667",
+    city:     "entry.2042900779",
+    name:     "entry.226583407",
+    feelings: "entry.533649140",    // checkboxes
+    overall:  "entry.1991278581",   // linear scale 1-5
+    liked:    "entry.669648669",    // checkboxes
+    disliked: "entry.1354870404",   // checkboxes
+    other:    "entry.532593572"     // paragraph
+  },
+
+  // Each aspect of the grid is a row in the Google Form grid and has its own entry id.
+  aspects: [
+    { label: "Imagination of a sustainable future",   entry: "entry.731219311" },
+    { label: "Originality of ideas",                  entry: "entry.612474546" },
+    { label: "Clarity of the sustainability message", entry: "entry.2000777563" },
+    { label: "Realism: could it happen?",             entry: "entry.90916864" },
+    { label: "Hope it inspires",                      entry: "entry.1488904466" },
+    { label: "Emotional impact",                      entry: "entry.1550571501" }
+  ],
+  gridColumns: { d: "Disliked", n: "Neutral", l: "Liked" },   // must match grid column names
+
+  // Saved list, used if the sheet can't be loaded. "image" is the Google Drive file id of the artwork picture.
+  // The artist is shown automatically for the chosen artwork (one artist per artwork).
+  // In the Google Form, artwork dropdown options (if used) must read exactly "number - title".
+  artworks: [
+    { number: "1",  title: "The actions of the sustainable citizens", artist: "JFP", image: "1b5AVKkhOM_XOY03CSfBSTdAZiOHiYJgZ" },
+    { number: "2",  title: "4 causes of natural damage",              artist: "Putu Linda Anggarini", image: "1jOIA_0-djkDFPd6Bl2y_Bvut2YHDEmBQ" },
+    { number: "3",  title: "Our Earth, Our Responsibility",           artist: "Kadek Putra Mahardika", image: "1mO8-cx6SFRX9LstpAuobOwJNJH90QXNB" },
+    { number: "4",  title: "The Timeless Pyramids",                   artist: "Dinh The Cuong", image: "1kYPuo-2dfoXAfSJNYVS3GM-XQPl5jbZH" },
+    { number: "5",  title: "The world in 2050",                       artist: "Nguyen Huu Manh (Mike)", image: "1UrRi2-Tg_fQMAKn5W2OYs1C3NLkXvSqj" },
+    { number: "6",  title: "My Future City in 2066",                  artist: "Umeno Abe", image: "1i00HS4vFvoo0jnOcGxY3T_u4QQFinNkx" },
+    { number: "7",  title: "My Sustainability Bootcamp Team",         artist: "Tamano Abe", image: "1bgMmNEMGfDNhgHscyCIiQmqpb-FT-kfI" },
+    { number: "8",  title: "Hello, Green!!!",                         artist: "Umeno Abe", image: "1yijsUBpUnntKsNHGWkSxxoLxJIfzvHsi" },
+    { number: "9",  title: "Our Action Our Responsibility",           artist: "Shannon Yip Zhi Xuan", image: "1-QHFct3MTudqQsmjPcqzJksfXEWYDunk" },
+    { number: "10", title: "Irresponsible Action, Littering",         artist: "Shannon Yip Zhi Xuan", image: "15BQXYS1puDMXfoNaBlsTrZ6UMn4JnTyQ" },
+    { number: "11", title: "Tap Leaking",                             artist: "Shannon Yip Zhi Xuan", image: "1vfqMIQfCca0rCIIsYZvyO1SrCD_6-rmq" },
+    { number: "12", title: "Small Action Make A Big Different",       artist: "Shannon Yip Zhi Xuan", image: "1sdYL2pMUhoQ3Hxoy535rBTD_F9pLluBt" },
+    { number: "13", title: "Ecoprint through sustainability",         artist: "Syailendra Abimanyu Sabrang Winarso", image: "1AeGXAhsWWBdi36ep2qveiYpCHNNH7bWQ" },
+    { number: "14", title: "Small but big impact",                    artist: "Syailendra Abimanyu Sabrang Winarso", image: "1IHuxOwB4wLVJb4uSRJShglb3oRjhJEj9" }
+  ],
+
+  // Words people can tick for "liked most" and "didn't like". Same list is used for both.
+  words: ["Colors", "Composition", "Creativity", "Materials", "Technique", "Message",
+          "Hopefulness", "Realism", "Detail", "Scale", "Originality", "Use of recycled materials"],
+  // Every country, with its cities. One line per country: ISO code, then cities separated by |.
+  // Country names are generated from the code in the viewer's browser (English). "Other" is added to every list.
+  // To add or change cities, edit the line for that country. To add a country, add a new line.
+  cityData: `
+AF:Kabul|Kandahar|Herat|Mazar-i-Sharif|Jalalabad
+AL:Tirana|Durrës|Vlorë|Shkodër|Elbasan
+DZ:Algiers|Oran|Constantine|Annaba|Blida
+AD:Andorra la Vella|Escaldes-Engordany
+AO:Luanda|Huambo|Lobito|Benguela|Lubango
+AG:St. John's
+AR:Buenos Aires|Córdoba|Rosario|Mendoza|La Plata|Tucumán|Mar del Plata
+AM:Yerevan|Gyumri|Vanadzor
+AU:Sydney|Melbourne|Brisbane|Perth|Adelaide|Canberra|Gold Coast|Hobart|Darwin
+AT:Vienna|Graz|Linz|Salzburg|Innsbruck
+AZ:Baku|Ganja|Sumqayit
+BS:Nassau|Freeport
+BH:Manama|Riffa|Muharraq
+BD:Dhaka|Chittagong|Khulna|Rajshahi|Sylhet
+BB:Bridgetown
+BY:Minsk|Gomel|Mogilev|Vitebsk|Grodno|Brest
+BE:Brussels|Antwerp|Ghent|Bruges|Liège|Leuven
+BZ:Belize City|Belmopan
+BJ:Cotonou|Porto-Novo|Parakou
+BT:Thimphu|Paro|Phuntsholing
+BO:La Paz|Santa Cruz de la Sierra|Cochabamba|Sucre|El Alto
+BA:Sarajevo|Banja Luka|Mostar|Tuzla
+BW:Gaborone|Francistown|Maun
+BR:São Paulo|Rio de Janeiro|Brasília|Salvador|Fortaleza|Belo Horizonte|Curitiba|Manaus|Recife|Porto Alegre
+BN:Bandar Seri Begawan|Kuala Belait
+BG:Sofia|Plovdiv|Varna|Burgas
+BF:Ouagadougou|Bobo-Dioulasso
+BI:Gitega|Bujumbura
+CV:Praia|Mindelo
+KH:Phnom Penh|Siem Reap|Battambang|Sihanoukville
+CM:Yaoundé|Douala|Bamenda
+CA:Toronto|Montreal|Vancouver|Calgary|Edmonton|Ottawa|Winnipeg|Quebec City|Halifax
+CF:Bangui
+TD:N'Djamena
+CL:Santiago|Valparaíso|Concepción|Antofagasta
+CN:Beijing|Shanghai|Guangzhou|Shenzhen|Chengdu|Hangzhou|Wuhan|Xi'an|Chongqing|Tianjin|Nanjing
+CO:Bogotá|Medellín|Cali|Barranquilla|Cartagena
+KM:Moroni
+CG:Brazzaville|Pointe-Noire
+CD:Kinshasa|Lubumbashi|Goma|Kisangani
+CR:San José|Alajuela|Cartago
+CI:Abidjan|Yamoussoukro|Bouaké
+HR:Zagreb|Split|Rijeka|Dubrovnik
+CU:Havana|Santiago de Cuba|Camagüey
+CY:Nicosia|Limassol|Larnaca|Paphos
+CZ:Prague|Brno|Ostrava|Plzeň
+DK:Copenhagen|Aarhus|Odense|Aalborg
+DJ:Djibouti
+DM:Roseau
+DO:Santo Domingo|Santiago de los Caballeros|Punta Cana
+EC:Quito|Guayaquil|Cuenca
+EG:Cairo|Alexandria|Giza|Luxor|Aswan|Sharm El Sheikh
+SV:San Salvador|Santa Ana|San Miguel
+GQ:Malabo|Bata
+ER:Asmara
+EE:Tallinn|Tartu|Narva
+SZ:Mbabane|Manzini
+ET:Addis Ababa|Dire Dawa|Gondar|Hawassa
+FJ:Suva|Nadi|Lautoka
+FI:Helsinki|Espoo|Tampere|Turku|Oulu
+FR:Paris|Marseille|Lyon|Toulouse|Nice|Nantes|Strasbourg|Bordeaux|Lille
+GA:Libreville|Port-Gentil
+GM:Banjul|Serekunda
+GE:Tbilisi|Batumi|Kutaisi
+DE:Berlin|Hamburg|Munich|Cologne|Frankfurt|Stuttgart|Düsseldorf|Leipzig|Dresden
+GH:Accra|Kumasi|Tamale|Takoradi
+GR:Athens|Thessaloniki|Patras|Heraklion
+GD:St. George's
+GT:Guatemala City|Quetzaltenango|Antigua Guatemala
+GN:Conakry|Kankan
+GW:Bissau
+GY:Georgetown
+HT:Port-au-Prince|Cap-Haïtien
+HN:Tegucigalpa|San Pedro Sula
+HK:Hong Kong
+HU:Budapest|Debrecen|Szeged|Pécs
+IS:Reykjavík|Akureyri
+IN:Mumbai|Delhi|Bengaluru|Hyderabad|Chennai|Kolkata|Pune|Ahmedabad|Jaipur
+ID:Jakarta|Bali|Singaraja|Sleman (Yogyakarta)|Yogyakarta|Surabaya|Bandung|Medan|Semarang|Makassar
+IR:Tehran|Mashhad|Isfahan|Shiraz|Tabriz
+IQ:Baghdad|Basra|Mosul|Erbil|Najaf
+IE:Dublin|Cork|Galway|Limerick
+IL:Jerusalem|Tel Aviv|Haifa|Beersheba
+IT:Rome|Milan|Naples|Turin|Florence|Venice|Bologna|Palermo
+JM:Kingston|Montego Bay
+JP:Tokyo|Osaka|Kyoto|Yokohama|Nagoya|Sapporo|Fukuoka|Kobe|Hiroshima
+JO:Amman|Zarqa|Irbid|Aqaba
+KZ:Astana|Almaty|Shymkent
+KE:Nairobi|Mombasa|Kisumu|Nakuru
+KI:Tarawa
+XK:Pristina|Prizren
+KW:Kuwait City|Hawalli
+KG:Bishkek|Osh
+LA:Vientiane|Luang Prabang|Pakse
+LV:Riga|Daugavpils|Liepāja
+LB:Beirut|Tripoli|Sidon
+LS:Maseru
+LR:Monrovia
+LY:Tripoli|Benghazi|Misrata
+LI:Vaduz
+LT:Vilnius|Kaunas|Klaipėda
+LU:Luxembourg City
+MO:Macao
+MG:Antananarivo|Toamasina|Antsirabe
+MW:Lilongwe|Blantyre
+MY:Kuala Lumpur|Ipoh|George Town|Johor Bahru|Kota Kinabalu|Kuching|Malacca|Shah Alam
+MV:Malé
+ML:Bamako|Sikasso|Timbuktu
+MT:Valletta|Sliema
+MH:Majuro
+MR:Nouakchott|Nouadhibou
+MU:Port Louis|Curepipe
+MX:Mexico City|Guadalajara|Monterrey|Puebla|Cancún|Tijuana|Mérida
+FM:Palikir
+MD:Chișinău|Bălți
+MC:Monaco
+MN:Ulaanbaatar|Erdenet|Darkhan
+ME:Podgorica|Budva|Nikšić
+MA:Rabat|Casablanca|Marrakesh|Fez|Tangier
+MZ:Maputo|Beira|Nampula
+MM:Yangon|Mandalay|Naypyidaw
+NA:Windhoek|Walvis Bay|Swakopmund
+NR:Yaren
+NP:Kathmandu|Pokhara|Lalitpur|Biratnagar
+NL:Amsterdam|Rotterdam|The Hague|Utrecht|Eindhoven
+NZ:Auckland|Wellington|Christchurch|Hamilton|Queenstown
+NI:Managua|León|Granada
+NE:Niamey|Zinder
+NG:Lagos|Abuja|Kano|Ibadan|Port Harcourt
+KP:Pyongyang|Hamhung
+MK:Skopje|Bitola|Ohrid
+NO:Oslo|Bergen|Trondheim|Stavanger
+OM:Muscat|Salalah|Sohar
+PK:Karachi|Lahore|Islamabad|Rawalpindi|Faisalabad|Peshawar
+PW:Ngerulmud|Koror
+PS:Ramallah|Gaza|Hebron
+PA:Panama City|Colón|David
+PG:Port Moresby|Lae
+PY:Asunción|Ciudad del Este
+PE:Lima|Arequipa|Cusco|Trujillo
+PH:Manila|Quezon City|Cebu City|Davao City|Makati
+PL:Warsaw|Kraków|Łódź|Wrocław|Gdańsk|Poznań
+PT:Lisbon|Porto|Braga|Faro|Coimbra
+QA:Doha|Al Rayyan|Al Wakrah
+RO:Bucharest|Cluj-Napoca|Timișoara|Iași|Brașov
+RU:Moscow|Saint Petersburg|Novosibirsk|Yekaterinburg|Kazan|Vladivostok
+RW:Kigali|Butare
+KN:Basseterre
+LC:Castries
+VC:Kingstown
+WS:Apia
+SM:San Marino
+ST:São Tomé
+SA:Riyadh|Jeddah|Mecca|Medina|Dammam
+SN:Dakar|Touba|Saint-Louis
+RS:Belgrade|Novi Sad|Niš
+SC:Victoria
+SL:Freetown|Bo
+SG:Singapore
+SK:Bratislava|Košice
+SI:Ljubljana|Maribor
+SB:Honiara
+SO:Mogadishu|Hargeisa
+ZA:Johannesburg|Cape Town|Durban|Pretoria|Port Elizabeth
+KR:Seoul|Busan|Incheon|Daegu|Daejeon
+SS:Juba|Wau
+ES:Madrid|Barcelona|Valencia|Seville|Bilbao|Málaga
+LK:Colombo|Kandy|Galle|Jaffna
+SD:Khartoum|Omdurman|Port Sudan
+SR:Paramaribo
+SE:Stockholm|Gothenburg|Malmö|Uppsala
+CH:Zurich|Geneva|Bern|Basel|Lausanne
+SY:Damascus|Aleppo|Homs|Latakia
+TW:Taipei|Kaohsiung|Taichung|Tainan
+TJ:Dushanbe|Khujand
+TZ:Dar es Salaam|Dodoma|Arusha|Zanzibar City
+TH:Bangkok|Chiang Mai|Phuket|Pattaya|Khon Kaen
+TL:Dili|Baucau
+TG:Lomé|Kara
+TO:Nukuʻalofa
+TT:Port of Spain|San Fernando
+TN:Tunis|Sfax|Sousse
+TR:Istanbul|Ankara|Izmir|Bursa|Antalya
+TM:Ashgabat|Türkmenabat
+TV:Funafuti
+UG:Kampala|Entebbe|Gulu
+UA:Kyiv|Kharkiv|Odesa|Lviv|Dnipro
+AE:Dubai|Abu Dhabi|Sharjah|Al Ain
+GB:London|Manchester|Birmingham|Edinburgh|Glasgow|Liverpool|Cardiff|Belfast
+US:New York|Los Angeles|Chicago|Houston|San Francisco|Seattle|Boston|Washington, D.C.|Miami
+UY:Montevideo|Punta del Este
+UZ:Tashkent|Samarkand|Bukhara
+VU:Port Vila
+VA:Vatican City
+VE:Caracas|Maracaibo|Valencia
+VN:Hanoi|Ho Chi Minh City|Da Nang|Hai Phong|Can Tho|Hue|Nha Trang
+YE:Sanaa|Aden|Taiz
+ZM:Lusaka|Ndola|Livingstone
+ZW:Harare|Bulawayo
+`,
+
+  feelings:  ["Joy", "Calm", "Curiosity", "Confusion", "Discomfort", "Nothing"]
+};
+/* ============================================================ */
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const E = CONFIG.entries;
+
+// Build { "Country name": [cities] } from cityData, sorted A to Z.
+const LOCATIONS = (() => {
+  let names = null;
+  try { names = new Intl.DisplayNames(["en"], { type: "region" }); } catch (e) { /* very old browser: fall back to codes */ }
+  const rows = CONFIG.cityData.trim().split("\n").map(line => {
+    const i = line.indexOf(":"), code = line.slice(0, i).trim();
+    return [names ? names.of(code) : code, line.slice(i + 1).split("|").map(c => c.trim()).filter(Boolean)];
+  }).sort((a, b) => a[0].localeCompare(b[0], "en"));
+  return Object.fromEntries(rows);
+})();
+const connected = !CONFIG.formUrl.includes("YOUR_FORM_ID");
+if (!connected) $("#banner").hidden = false;
+
+const artworkLabel = a => `${a.number} - ${a.title}`;
+const stepNames = ["Artwork", "Look", "You", "Your verdict", "Comments"];
+const VIEW = 1;   // index of the "Take a look" step
+
+const chips = (name, items) => `<div class="chips">${items.map(v =>
+  `<label class="chip"><input type="checkbox" name="${name}" value="${esc(v)}"><span>${esc(v)}</span></label>`).join("")}</div>`;
+
+const textarea = (id, label) => `
+  <div class="field"><label class="q" for="${id}">${label} <span class="opt">(optional)</span></label>
+  <textarea id="${id}" name="${id}" maxlength="500"></textarea><div class="count" data-for="${id}">0 / 500</div></div>`;
+
+const panels = [
+  `<h2>The artwork</h2><p class="hint">Choose the artwork by number or name. The artist is filled in for you.</p>
+   <div class="field"><label class="q" for="artwork">Artwork</label>
+     <select id="artwork" name="artwork"></select>
+     <div class="hint" id="artworkNote" style="margin:6px 0 0" hidden></div>
+     <div class="err" data-err="artwork"></div></div>
+   <div class="field"><div class="q">Artist</div>
+     <div class="artist-shown" id="artistShown">Shown once you choose an artwork</div></div>`,
+
+  `<h2>Take a look</h2><p class="hint" id="viewCap"></p>
+   <div class="view"><img id="viewImg" alt="" hidden><p class="view-msg" id="viewMsg"></p></div>
+   <div class="bar" aria-hidden="true"><div id="viewBar"></div></div>
+   <p class="view-count" id="viewCount" role="status"></p>
+   <div class="viewskip"><button type="button" id="viewSkip" hidden>Continue</button></div>`,
+
+  `<h2>About you</h2><p class="hint">So we know who is looking.</p>
+   <div class="field"><label class="q" for="country">Which country are you from?</label>
+     <select id="country" name="country"></select>
+     <input type="text" id="countryOther" name="countryOther" placeholder="Type your country" aria-label="Your country" style="margin-top:8px" hidden>
+     <div class="err" data-err="country"></div></div>
+   <div class="field"><label class="q" for="city">Which city?</label>
+     <select id="city" name="city" disabled><option value="">Choose a country first</option></select>
+     <input type="text" id="cityOther" name="cityOther" placeholder="Type your city" aria-label="Your city" style="margin-top:8px" hidden>
+     <div class="err" data-err="city"></div></div>
+   <div class="field"><label class="q" for="name">Your name <span class="opt">(optional)</span></label>
+     <input type="text" id="name" name="name" autocomplete="name"></div>`,
+
+  `<h2>Your verdict</h2><p class="hint">Rate each aspect, then pick the words that fit.</p>
+   <fieldset class="field"><legend class="q">How did the artwork do on each aspect?</legend>
+   ${CONFIG.aspects.map((a, i) => `
+     <div class="aspect" data-aspect="${i}"><div class="name">${esc(a.label)}</div>
+     <div class="seg" role="radiogroup" aria-label="${esc(a.label)}">
+       ${["d","n","l"].map(k => `<label><input type="radio" name="aspect${i}" value="${esc(CONFIG.gridColumns[k])}"><span class="${k}">${esc(CONFIG.gridColumns[k])}</span></label>`).join("")}
+     </div></div>`).join("")}
+     <div class="err" data-err="aspects"></div></fieldset>
+   <fieldset class="field"><legend class="q">What did you like most? <span class="opt">(pick any)</span></legend>
+     ${chips("liked", CONFIG.words)}</fieldset>
+   <fieldset class="field"><legend class="q">What didn’t you like? <span class="opt">(pick any)</span></legend>
+     ${chips("disliked", CONFIG.words)}</fieldset>
+   <fieldset class="field"><legend class="q">How did it make you feel? <span class="opt">(pick any)</span></legend>
+     ${chips("feelings", CONFIG.feelings)}</fieldset>
+   <fieldset class="field"><legend class="q">Overall rating</legend>
+     <div class="scale">${[1,2,3,4,5].map(n => `<label><input type="radio" name="overall" value="${n}"><span>${n}</span></label>`).join("")}
+     <small>1 = poor, 5 = excellent</small></div><div class="err" data-err="overall"></div></fieldset>`,
+
+  `<h2>Comments</h2><p class="hint">Optional. A sentence is plenty.</p>
+   ${textarea("other", "Anything you’d like to add?")}`
+];
+
+$("#panels").innerHTML = panels.map((p, i) => `<fieldset class="panel" data-step="${i}" ${i ? "hidden" : ""}>${p}</fieldset>`).join("");
+
+let step = 0;
+const form = $("#form");
+
+function renderSteps() {
+  $("#steps").innerHTML = stepNames.map((n, i) =>
+    `<li class="${i < step ? "done" : i === step ? "current" : ""}" ${i === step ? 'aria-current="step"' : ""}>${n}</li>`).join("");
+  document.querySelectorAll(".panel").forEach(p => p.hidden = +p.dataset.step !== step);
+  $("#back").style.visibility = step ? "visible" : "hidden";
+  $("#next").style.visibility = step === VIEW ? "hidden" : "visible";
+  $("#next").textContent = step === panels.length - 1 ? "Send review" : "Next";
+  if (step === VIEW) startViewing(); else stopViewing();
+}
+
+function go(n) { step = n; renderSteps(); window.scrollTo({ top: 0 }); }
+
+// Show the chosen artwork for a few seconds, then move on by itself.
+let viewTimer = null;
+function stopViewing() {
+  clearInterval(viewTimer); viewTimer = null;
+  const img = $("#viewImg"); img.onload = img.onerror = null;
+}
+function startViewing() {
+  stopViewing();
+  const a = ARTWORKS[+form.artwork.value];
+  if (!a) { go(0); return; }
+  const img = $("#viewImg"), msg = $("#viewMsg"), bar = $("#viewBar"), count = $("#viewCount"), skip = $("#viewSkip");
+  $("#viewCap").textContent = `${artworkLabel(a)}, by ${a.artist}`;
+  bar.style.width = "0%"; count.textContent = ""; skip.hidden = true; img.hidden = true;
+  msg.hidden = false; msg.textContent = "Loading the artwork…";
+  const fail = () => {
+    msg.textContent = "We couldn’t load this image. You can still continue with your review.";
+    skip.hidden = false;
+  };
+  if (!a.image) { fail(); return; }
+  img.alt = `${artworkLabel(a)}, by ${a.artist}`;
+  img.onerror = fail;
+  img.onload = () => {
+    img.hidden = false; msg.hidden = true;
+    const total = CONFIG.viewSeconds * 1000, start = Date.now();
+    viewTimer = setInterval(() => {
+      const spent = Date.now() - start;
+      bar.style.width = Math.min(100, spent / total * 100) + "%";
+      count.textContent = `Continuing in ${Math.max(1, Math.ceil((total - spent) / 1000))}…`;
+      if (spent >= total) { stopViewing(); go(VIEW + 1); }
+    }, 200);
+  };
+  img.src = `https://drive.google.com/thumbnail?id=${encodeURIComponent(a.image)}&sz=w1600`;
+}
+
+function setErr(key, msg) { const el = $(`[data-err="${key}"]`); if (el) el.textContent = msg || ""; }
+
+function validate() {
+  let ok = true;
+  if (step === 0) {
+    ok = form.artwork.value !== "";
+    setErr("artwork", ok ? "" : "Choose an artwork.");
+  }
+  if (step === 2) {
+    const { country, city } = getLocation();
+    setErr("country", country ? "" : "Choose or type your country.");
+    setErr("city", !country || city ? "" : "Choose or type your city.");
+    ok = !!country && !!city;
+  }
+  if (step === 3) {
+    let missing = 0;
+    CONFIG.aspects.forEach((_, i) => {
+      const has = !!form.querySelector(`input[name="aspect${i}"]:checked`);
+      $(`[data-aspect="${i}"]`).classList.toggle("invalid", !has);
+      if (!has) missing++;
+    });
+    setErr("aspects", missing ? "Rate every aspect (Disliked, Neutral or Liked)." : "");
+    const hasOverall = !!form.querySelector('input[name="overall"]:checked');
+    setErr("overall", hasOverall ? "" : "Choose an overall rating.");
+    ok = !missing && hasOverall;
+  }
+  if (!ok) { const first = document.querySelector(`.panel[data-step="${step}"] .err:not(:empty), .aspect.invalid`); first && first.scrollIntoView({ block: "center" }); }
+  return ok;
+}
+
+function buildPayload() {
+  const p = new URLSearchParams();
+  const val = n => form[n].value.trim();
+  const add = (k, v) => { if (v) p.append(E[k], v); };
+  ["other","name"].forEach(k => add(k, val(k)));
+  const loc = getLocation(); add("country", loc.country); add("city", loc.city);
+  if (form.artwork.value !== "") {
+    const a = ARTWORKS[+form.artwork.value];
+    add("artwork", artworkLabel(a)); add("artist", a.artist);
+  }
+  CONFIG.aspects.forEach((a, i) => {
+    const c = form.querySelector(`input[name="aspect${i}"]:checked`);
+    if (c) p.append(a.entry, c.value);
+  });
+  ["liked","disliked"].forEach(k =>
+    form.querySelectorAll(`input[name="${k}"]:checked`).forEach(c => p.append(E[k], c.value)));
+  form.querySelectorAll('input[name="feelings"]:checked').forEach(c => p.append(E.feelings, c.value));
+  const o = form.querySelector('input[name="overall"]:checked'); if (o) p.append(E.overall, o.value);
+  return p;
+}
+
+async function send() {
+  const btn = $("#next"), payload = buildPayload();
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    if (connected) {
+      // no-cors: Google doesn't return a readable response, so success can't be confirmed here.
+      await fetch(CONFIG.formUrl, { method: "POST", mode: "no-cors", body: payload });
+    } else {
+      console.log("Not connected. Payload that would be sent:", Object.fromEntries(payload));
+    }
+    form.hidden = true; $("#steps").hidden = true; $("#thanks").hidden = false;
+    window.scrollTo({ top: 0 });
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "Send review";
+    setErr("aspects", "");
+    alert("Couldn’t send your review. Check your connection and try again.");
+  }
+}
+
+$("#next").addEventListener("click", () => {
+  if (!validate()) return;
+  if (step < panels.length - 1) go(step + 1); else send();
+});
+$("#back").addEventListener("click", () => { if (step) go(step === VIEW + 1 ? 0 : step - 1); });   // skip the timed step going back
+$("#viewSkip").addEventListener("click", () => go(VIEW + 1));
+$("#again").addEventListener("click", () => {
+  form.reset(); fillCountries(); fillArtworkSelect(); step = 0; form.hidden = false; $("#steps").hidden = false; $("#thanks").hidden = true;
+  $("#next").disabled = false; document.querySelectorAll(".count").forEach(c => c.textContent = "0 / 500");
+  renderSteps();
+});
+form.addEventListener("input", e => {
+  if (e.target.tagName === "TEXTAREA") $(`.count[data-for="${e.target.id}"]`).textContent = `${e.target.value.length} / 500`;
+});
+let ARTWORKS = CONFIG.artworks;
+
+const OTHER = "Other";
+const optionList = (items, prompt) => `<option value="">${prompt}</option>` + items.map(v => `<option>${esc(v)}</option>`).join("");
+
+function getLocation() {
+  const c = form.country.value, isOtherCountry = c === OTHER;
+  const country = isOtherCountry ? form.countryOther.value.trim() : c;
+  const city = isOtherCountry || form.city.value === OTHER ? form.cityOther.value.trim() : form.city.value;
+  return { country, city };
+}
+
+function updateCity() {
+  const c = form.country.value, sel = form.city;
+  form.countryOther.hidden = c !== OTHER;
+  if (c === OTHER) { sel.hidden = true; form.cityOther.hidden = false; return; }
+  sel.hidden = false;
+  if (!c) { sel.innerHTML = '<option value="">Choose a country first</option>'; sel.disabled = true; form.cityOther.hidden = true; return; }
+  sel.disabled = false;
+  sel.innerHTML = optionList([...LOCATIONS[c], OTHER], "Choose a city");
+  form.cityOther.hidden = true;
+}
+
+function fillCountries() {
+  form.country.innerHTML = optionList([...Object.keys(LOCATIONS), OTHER], "Choose a country");
+  updateCity();
+}
+form.country.addEventListener("change", updateCity);
+form.city.addEventListener("change", () => { form.cityOther.hidden = form.city.value !== OTHER; });
+
+function showArtist() {
+  const i = form.artwork.value;
+  $("#artistShown").textContent = i === "" ? "Shown once you choose an artwork" : ARTWORKS[+i].artist;
+}
+
+function fillArtworkSelect() {
+  const sel = form.artwork, keep = sel.value !== "" && ARTWORKS[+sel.value] ? artworkLabel(ARTWORKS[+sel.value]) : null;
+  sel.innerHTML = '<option value="">Choose an artwork</option>' +
+    ARTWORKS.map((a, i) => `<option value="${i}">${esc(artworkLabel(a))}</option>`).join("");
+  const idx = keep ? ARTWORKS.findIndex(a => artworkLabel(a) === keep) : -1;
+  if (idx >= 0) sel.value = String(idx);
+  showArtist();
+}
+
+function parseCsv(t) {
+  const rows = []; let r = [], f = "", q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { r.push(f); f = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && t[i + 1] === "\n") i++; r.push(f); rows.push(r); r = []; f = ""; }
+    else f += c;
+  }
+  if (f !== "" || r.length) { r.push(f); rows.push(r); }
+  return rows;
+}
+
+async function loadArtworks() {
+  if (!CONFIG.artworksCsvUrl) return;
+  const note = $("#artworkNote");
+  try {
+    const res = await fetch(CONFIG.artworksCsvUrl);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const rows = parseCsv(await res.text()).filter(r => r.some(c => c.trim()));
+    const h = rows[0].map(x => x.trim().toLowerCase());
+    const iName = h.findIndex(x => x.includes("full name"));
+    const iTitle = h.findIndex(x => x.includes("sustainability title"));
+    const iNum = h.findIndex(x => ["#", "number", "no", "no."].includes(x));
+    const iImg = h.findIndex(x => x.includes("artwork image"));
+    const driveId = u => { const m = /[?&]id=([\w-]+)|\/d\/([\w-]+)/.exec(u || ""); return m ? (m[1] || m[2]) : ""; };
+    if (iName < 0 || iTitle < 0) throw new Error("Columns not found");
+    const clean = s => (s || "").replace(/\s+/g, " ").trim();
+    const seen = {};   // same person, different capitalization or spacing: keep the first spelling
+    const list = rows.slice(1).map((r, i) => {
+      const nm = clean(r[iName]), key = nm.toLowerCase();
+      if (nm && !seen[key]) seen[key] = nm;
+      return { number: iNum >= 0 ? clean(r[iNum]) : String(i + 1), title: clean(r[iTitle]), artist: seen[key] || "", image: iImg >= 0 ? driveId(r[iImg]) : "" };
+    }).filter(a => a.title && a.artist);
+    if (!list.length) throw new Error("No rows");
+    ARTWORKS = list; note.hidden = true; fillArtworkSelect();
+  } catch (e) {
+    console.warn("Could not load the artwork list:", e);
+    note.textContent = "Couldn’t load the latest artwork list. Showing the saved list.";
+    note.hidden = false;
+  }
+}
+form.artwork.addEventListener("change", showArtist);
+form.addEventListener("submit", e => e.preventDefault());
+
+fillCountries();
+fillArtworkSelect();
+renderSteps();
+loadArtworks();
+</script>
+</body>
+</html>
